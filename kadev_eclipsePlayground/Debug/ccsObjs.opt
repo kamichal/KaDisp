@@ -1,0 +1,1 @@
+"./eZ_include/usbstk5515_led.obj" "./eZ_include/usbstk5515_i2c.obj" "./eZ_include/usbstk5515_gpio.obj" "./eZ_include/usbstk5515.obj" "./kadisp/osd9616.obj" "./kadisp/kadisp.obj" "./kadisp/font_8x6_philippe.obj" "./src/main.obj" "../C5515.cmd" -l"rts55h.lib" 
