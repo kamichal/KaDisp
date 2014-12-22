@@ -4,5 +4,5 @@
 
 USER_OBJS :=
 
-LIBS := -l"rts55h.lib"
+LIBS := -l"libc.a"
 

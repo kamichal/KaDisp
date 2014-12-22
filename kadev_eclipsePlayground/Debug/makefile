@@ -10,12 +10,12 @@ $(GEN_CMDS__FLAG) \
 "./eZ_include/usbstk5515_i2c.obj" \
 "./eZ_include/usbstk5515_gpio.obj" \
 "./eZ_include/usbstk5515.obj" \
-"./kadisp/osd9616.obj" \
+"./kadisp/ssd1780_oled_cntrl.obj" \
 "./kadisp/kadisp.obj" \
 "./kadisp/font_8x6_philippe.obj" \
 "./src/main.obj" \
 "../C5515.cmd" \
--l"rts55h.lib" \
+-l"libc.a" \
 
 -include ../makefile.init
 
@@ -126,15 +126,15 @@ all: kadev_ecl.out
 kadev_ecl.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C5500 Linker'
-	"/km/ti/ccsv5/tools/compiler/c5500_4.4.1/bin/cl55" -v5515 --memory_model=huge -g --define=c5515 --display_error_number --diag_warning=225 --ptrdiff_size=32 -z -m"kadev_ecl.map" --stack_size=0x200 --heap_size=0x400 -i"/km/ti/ccsv5/tools/compiler/c5500_4.4.1/lib" -i"/km/ti/ccsv5/tools/compiler/c5500_4.4.1/include" --reread_libs --display_error_number --warn_sections --xml_link_info="kadev_ecl_linkInfo.xml" --rom_model --sys_stacksize=0x200 -o "kadev_ecl.out" $(ORDERED_OBJS)
+	"/km/ti/ccsv5/tools/compiler/c5500_4.4.1/bin/cl55" -v5515 --memory_model=large -g --define=c5515 --display_error_number --diag_warning=225 --ptrdiff_size=16 --printf_support=full -z -m"kadev_ecl.map" --stack_size=0x200 --heap_size=0x400 -i"/km/ti/ccsv5/tools/compiler/c5500_4.4.1/lib" -i"/km/ti/ccsv5/tools/compiler/c5500_4.4.1/include" --reread_libs --display_error_number --warn_sections --xml_link_info="kadev_ecl_linkInfo.xml" --rom_model --sys_stacksize=0x200 -o "kadev_ecl.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
 	-$(RM) $(C5500_EXECUTABLE_OUTPUTS__QUOTED) "kadev_ecl.out"
-	-$(RM) "src/main.pp" "kadisp/font_8x6_philippe.pp" "kadisp/kadisp.pp" "kadisp/osd9616.pp" "eZ_include/usbstk5515.pp" "eZ_include/usbstk5515_gpio.pp" "eZ_include/usbstk5515_i2c.pp" "eZ_include/usbstk5515_led.pp" 
-	-$(RM) "src/main.obj" "kadisp/font_8x6_philippe.obj" "kadisp/kadisp.obj" "kadisp/osd9616.obj" "eZ_include/usbstk5515.obj" "eZ_include/usbstk5515_gpio.obj" "eZ_include/usbstk5515_i2c.obj" "eZ_include/usbstk5515_led.obj" 
+	-$(RM) "src/main.pp" "kadisp/font_8x6_philippe.pp" "kadisp/kadisp.pp" "kadisp/ssd1780_oled_cntrl.pp" "eZ_include/usbstk5515.pp" "eZ_include/usbstk5515_gpio.pp" "eZ_include/usbstk5515_i2c.pp" "eZ_include/usbstk5515_led.pp" 
+	-$(RM) "src/main.obj" "kadisp/font_8x6_philippe.obj" "kadisp/kadisp.obj" "kadisp/ssd1780_oled_cntrl.obj" "eZ_include/usbstk5515.obj" "eZ_include/usbstk5515_gpio.obj" "eZ_include/usbstk5515_i2c.obj" "eZ_include/usbstk5515_led.obj" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

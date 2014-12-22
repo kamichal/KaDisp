@@ -8,7 +8,7 @@ src/main.obj: /home/kamichal/m_repo/kamichalRepo/kadev/eZ_include/usbstk5515.h
 src/main.obj: /home/kamichal/m_repo/kamichalRepo/kadev/eZ_include/usbstk5515_i2c.h
 src/main.obj: /home/kamichal/m_repo/kamichalRepo/kadev/eZ_include/usbstk5515.h
 src/main.obj: /home/kamichal/m_repo/kamichalRepo/kadev/kadisp/kadisp.h
-src/main.obj: /home/kamichal/m_repo/kamichalRepo/kadev/kadisp/osd9616.h
+src/main.obj: /home/kamichal/m_repo/kamichalRepo/kadev/kadisp/ssd1780_oled_cntrl.h
 src/main.obj: /home/kamichal/m_repo/kamichalRepo/kadev/eZ_include/usbstk5515.h
 src/main.obj: /home/kamichal/m_repo/kamichalRepo/kadev/eZ_include/usbstk5515.h
 
@@ -20,6 +20,6 @@ src/main.obj: /home/kamichal/m_repo/kamichalRepo/kadev/eZ_include/usbstk5515.h
 /home/kamichal/m_repo/kamichalRepo/kadev/eZ_include/usbstk5515_i2c.h: 
 /home/kamichal/m_repo/kamichalRepo/kadev/eZ_include/usbstk5515.h: 
 /home/kamichal/m_repo/kamichalRepo/kadev/kadisp/kadisp.h: 
-/home/kamichal/m_repo/kamichalRepo/kadev/kadisp/osd9616.h: 
+/home/kamichal/m_repo/kamichalRepo/kadev/kadisp/ssd1780_oled_cntrl.h: 
 /home/kamichal/m_repo/kamichalRepo/kadev/eZ_include/usbstk5515.h: 
 /home/kamichal/m_repo/kamichalRepo/kadev/eZ_include/usbstk5515.h: 

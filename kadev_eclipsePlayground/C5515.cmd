@@ -14,6 +14,13 @@
 /****************************************************************************/
 
 
+-stack    0x2000      /* Primary stack size   */
+-sysstack 0x1000      /* Secondary stack size */
+-heap     0x2000      /* Heap area size       */
+
+-c                    /* Use C linking conventions: auto-init vars at runtime */
+-u _Reset             /* Force load of reset interrupt handler                */
+
 MEMORY
 {
     MMR:     o = 0x000000  l = 0x0000c0  /* 192B Memory Mapped Registers */
@@ -71,10 +78,10 @@ MEMORY
 
 SECTIONS
 {
-   .text     >> SARAM1|SARAM2|SARAM0  /* Code                        */
+   .text     >> SARAM0|SARAM1|SARAM2|SARAM3|SARAM4|SARAM5|SARAM6|SARAM7  /* Code                        */
 
    /* Both stacks must be on same physical memory page               */
-   .stack    >  DARAM0                /* Primary system stack        */
+   .stack    >> DARAM0|SARAM3|SARAM4|SARAM5               /* Primary system stack        */
    .sysstack >  DARAM0                /* Secondary system stack      */
 
    .data     >> DARAM0|SARAM0|SARAM1  /* Initialized vars            */

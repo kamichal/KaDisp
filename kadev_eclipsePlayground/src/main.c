@@ -33,19 +33,19 @@ void main(void)
 
     KaDisp_init();
 
-#if! scroling_test
+#if scroling_test
 
-    KaDisp_text(0, "This is");
-    KaDisp_text(1, "kamichal's");
-    KaDisp_text(2, "implementation");
-    KaDisp_text(3, "of the OSD%d", 9616);
-    KaDisp_text(4, "display");
-    KaDisp_text(5, "driver SSD1780");
-    KaDisp_text(6, "on C%d", 5515);
-    KaDisp_text(7, "eZdsp.");
+    Kaprintf(0, "This is");
+    Kaprintf(1, "kamichal's");
+    Kaprintf(2, "implementation");
+    Kaprintf(3, "of the OSD%d", 9616);
+    Kaprintf(4, "display");
+    Kaprintf(5, "driver SSD1780");
+    Kaprintf(6, "on C%d", 5515);
+    Kaprintf(7, "eZdsp.");
 
-    KaDisp_send_all_page_buffers();
-    {
+    KaDisp_send_entire_cache();
+   {
         Uint8 pos = 0;
         Uint8 times = 0;
 
@@ -54,29 +54,30 @@ void main(void)
 
             SSD1780_send_cmd_val(SSD1780_SET_VERTICAL_OFFSET, pos & 0x3F);  // 0xD3
 
-            USBSTK5515_waitusec(20000);
+            USBSTK5515_waitusec(50000);
             if (pos % 0x3F == 0)
             {
-                KaDisp_text(7, "eZdsp.%10d", ++times);
-                KaDisp_send_page_buffer(7);
+                Kaprintf(7, "eZdsp.%10d", ++times);
+                KaDisp_send_page_cache(7);
                 pos = 0;
             }
             pos++;
         } while (1);
     }
-#endif
+#else
 
-#if licznik
+#if! licznik
     {
         Uint8 times = 0;
 
         do // run as fast as you can
         {
-            KaDisp_text(0, "eZdsp.%10d", ++times);
-            KaDisp_send_page_buffer(0);
+            Kaprintf(0, "eZdsp.%10d", ++times);
+            KaDisp_send_page_cache(0);
         } while (1);
     }
 
+#endif
 #endif
 
     SW_BREAKPOINT

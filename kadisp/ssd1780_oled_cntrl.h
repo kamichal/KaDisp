@@ -69,11 +69,14 @@ typedef enum SSD1780_scroll_interval_e
 
 typedef enum SSD1780_H_scroll_direction_e
 {
-    scroll_riht = 0x26, scroll_left = 0x27
+    scroll_riht = 0x26,
+    scroll_left = 0x27
 } SSD1780_H_scroll_direction_e;
+
 typedef enum SSD1780_VH_scroll_direction_e
 {
-    scroll_vert_riht = 0x29, scroll_vert_left = 0x2A
+    scroll_vert_riht = 0x29,
+    scroll_vert_left = 0x2A
 } SSD1780_VH_scroll_direction_e;
 
 typedef enum SSD1780_mem_mode_e

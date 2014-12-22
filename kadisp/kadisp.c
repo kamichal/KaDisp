@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#define KADISP_PAGE_BUFFER_SIZE (SSD1780_PAGE_WIDTH + 1)
+#define KADISP_PAGE_BUFFER_SIZE (KADISP_CACHE_LINE_LGH)
 
 #ifndef KADISP_AUTO_SEND
 #define KADISP_AUTO_SEND 1 // set 0 to disable
@@ -22,7 +22,7 @@
 #endif
 
 
-Uint8 g_page[KADISP_USED_PAGE_NUMBER][KADISP_PAGE_BUFFER_SIZE];
+Uint8 g_page_cache[KADISP_USED_PAGE_NUMBER][KADISP_PAGE_BUFFER_SIZE];
 
 
 void KaDisp_init(void)
@@ -40,53 +40,56 @@ void KaDisp_clear(void)
     for (p = 0; p < KADISP_USED_PAGE_NUMBER; p++)
     {
         for (x = 0; x < KADISP_PAGE_BUFFER_SIZE; x++)
-            g_page[p][x] = 0;
+            g_page_cache[p][x] = 0;
     }
 
-    KaDisp_send_all_page_buffers();
+    KaDisp_send_entire_cache();
 }
 
-void KaDisp_text(Uint8 page, char * format, ...)
+void Kaprintf(Uint8 line_position, char * format, ...)
 {
     char buffer[256];
     va_list args;
-    page = page % KADISP_USED_PAGE_NUMBER;
+    line_position = line_position % KADISP_USED_PAGE_NUMBER;
 
     va_start(args, format);
     vsprintf(buffer, format, args);
     va_end(args);
 
 #ifdef _DEBUG
-    printf("p%d: %s\n",page, buffer);
+    printf("p%d: %s\n",line_position, buffer);
 #endif
 
-    KaDisp_static_text(page, buffer);
+    KaDisp_string(line_position, buffer);
 }
 
-void KaDisp_static_text(Uint8 page, char * text)
+// displays static char buffer till first null
+void KaDisp_string(Uint8 line_position, char * letter)
 {
-    Uint16 c;
-    Uint16 col_idx = 0;
-    Uint16 p = page % KADISP_USED_PAGE_NUMBER;
-    g_page[p][col_idx++] = SSD1780_SEND_DATA;
+    Uint16 font_column;
+    Uint16 buffer_column = 0;
+    Uint16 max_length = 100;
+    Uint16 p = line_position % KADISP_USED_PAGE_NUMBER;
+    g_page_cache[p][buffer_column++] = SSD1780_SEND_DATA;
 
-    while (*text != 0)
+    // till buffer not terminated by null ('/0')or exceed max_length
+    while ((*letter != 0) && max_length--)
     {
-        for (c = 0; c < 6; c++)
+        for (font_column = 0; font_column < 6; font_column++) //used 6 px width font
         {
-            if (col_idx >= SSD1780_PAGE_WIDTH + 1)
+            g_page_cache[p][buffer_column++] = Font8x6[*letter][font_column];
+            if (buffer_column > KADISP_CACHE_LINE_LGH)
                 return;
-            g_page[p][col_idx++] = Font8x6[*text][c];
         }
-        text++;
+        letter++;
     }
-    //clear rest
-    while (col_idx < SSD1780_PAGE_WIDTH + 1)
+    //clear rest of the buffer
+    while (buffer_column < KADISP_CACHE_LINE_LGH)
     {
-        g_page[p][col_idx++] = 0x00;
+        g_page_cache[p][buffer_column++] = 0x00;
     }
 #if KADISP_AUTO_SEND
-    KaDisp_send_page_buffer(p);
+    KaDisp_send_page_cache(p);
 #endif
 
 #if KADISP_AUTO_SCROLL_TO_LAST_PAGE
@@ -94,17 +97,17 @@ void KaDisp_static_text(Uint8 page, char * text)
 #endif
 }
 
-void KaDisp_test_pattern(Uint8 page)
+void KaDisp_test_pattern(Uint8 line_position)
 {
     Uint16 idx = 0;
-    Uint16 p = page % KADISP_USED_PAGE_NUMBER;
-    g_page[p][idx] = SSD1780_SEND_DATA;
-    for (idx = 1; idx < SSD1780_PAGE_WIDTH + 1; idx++)
+    Uint16 p = line_position % KADISP_USED_PAGE_NUMBER;
+    g_page_cache[p][idx] = SSD1780_SEND_DATA;
+    for (idx = 1; idx < KADISP_CACHE_LINE_LGH; idx++)
     {
-        g_page[p][idx] = (idx - 1) & 0xFF;
+        g_page_cache[p][idx] = (idx - 1) & 0xFF;
     }
 #if KADISP_AUTO_SEND
-    KaDisp_send_page_buffer(p);
+    KaDisp_send_page_cache(p);
 #endif
 #if KADISP_AUTO_SCROLL_TO_LAST_PAGE
     KaDisp_scroll_to_page(p);
@@ -112,27 +115,37 @@ void KaDisp_test_pattern(Uint8 page)
 
 }
 
-void KaDisp_scroll_to_page(Uint8 page)
+
+void KaDisp_scroll_to_page(Uint8 line_position)
 {
-    SSD1780_send_cmd_val(SSD1780_SET_VERTICAL_OFFSET, (page * 8) & 0x3F);  // 0xD3
+    SSD1780_send_cmd_val(SSD1780_SET_VERTICAL_OFFSET, (line_position * 8) & 0x3F);  // 0xD3
 }
 
-void KaDisp_send_page_buffer(Uint8 page)
-{
-    Uint16 p = page % KADISP_USED_PAGE_NUMBER;
-    SSD1780_set_PAM_page_addres(p);
-    SSD1780_set_PAM_column_start_addres(31);
 
-    USBSTK5515_I2C_write(OSD9616_I2C_ADDR, &g_page[p][0], SSD1780_PAGE_WIDTH + 1);
+void KaDisp_scroll_to_point(Uint8 display_offset)
+{
+    SSD1780_send_cmd_val(SSD1780_SET_VERTICAL_OFFSET, display_offset & 0x3F);  // 0xD3 // 0x3F = max 64 horizontal lines
+}
+
+
+void KaDisp_send_page_cache(Uint8 line_position)
+{
+    Uint16 p = line_position % KADISP_USED_PAGE_NUMBER;
+    SSD1780_set_PAM_page_addres(p);
+    SSD1780_set_PAM_column_start_addres(31); // Skip 32 columns
+    // that's because the first 32 columns (left edge) are in ram, but not displayed.
+
+    USBSTK5515_I2C_write(OSD9616_I2C_ADDR, &g_page_cache[p][0], KADISP_CACHE_LINE_LGH);
 
 //    SSD1780_set_PAM_column_start_addres(0);
 }
 
-void KaDisp_send_all_page_buffers(void)
+
+void KaDisp_send_entire_cache(void)
 {
     Uint16 p;
     for (p = 0; p < KADISP_USED_PAGE_NUMBER; p++)
     {
-        KaDisp_send_page_buffer(p);
+        KaDisp_send_page_cache(p);
     }
 }

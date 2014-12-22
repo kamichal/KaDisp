@@ -5,7 +5,7 @@
  *      Author: kamichal
  */
 
-#include "osd9616.h"
+#include "ssd1780_oled_cntrl.h"
 #include "usbstk5515_i2c.h"
 #include "usbstk5515_gpio.h"
 #include "platform_lcd_defines.h"
