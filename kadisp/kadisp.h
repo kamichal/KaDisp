@@ -15,6 +15,7 @@
 #else
 #include <usbstk5505.h>
 #endif
+
 #define KADISP_USED_PAGE_NUMBER SSD1780_PAGE_COUNT // max 8 // 0,1...,7
 
 #define KADISP_CACHE_LINE_LGH SSD1780_PAGE_WIDTH + 1 // extra one byte for "command" token (goes first in burst)

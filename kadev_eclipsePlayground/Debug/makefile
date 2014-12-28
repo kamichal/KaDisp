@@ -14,8 +14,10 @@ $(GEN_CMDS__FLAG) \
 "./kadisp/kadisp.obj" \
 "./kadisp/font_8x6_philippe.obj" \
 "./src/main.obj" \
+"./kairq.obj" \
 "../C5515.cmd" \
 -l"libc.a" \
+-l/km/ti/c55xx_csl/build/C55XXCSL_LP.lib \
 
 -include ../makefile.init
 
@@ -133,8 +135,8 @@ kadev_ecl.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 # Other Targets
 clean:
 	-$(RM) $(C5500_EXECUTABLE_OUTPUTS__QUOTED) "kadev_ecl.out"
-	-$(RM) "src/main.pp" "kadisp/font_8x6_philippe.pp" "kadisp/kadisp.pp" "kadisp/ssd1780_oled_cntrl.pp" "eZ_include/usbstk5515.pp" "eZ_include/usbstk5515_gpio.pp" "eZ_include/usbstk5515_i2c.pp" "eZ_include/usbstk5515_led.pp" 
-	-$(RM) "src/main.obj" "kadisp/font_8x6_philippe.obj" "kadisp/kadisp.obj" "kadisp/ssd1780_oled_cntrl.obj" "eZ_include/usbstk5515.obj" "eZ_include/usbstk5515_gpio.obj" "eZ_include/usbstk5515_i2c.obj" "eZ_include/usbstk5515_led.obj" 
+	-$(RM) "kairq.pp" "src/main.pp" "kadisp/font_8x6_philippe.pp" "kadisp/kadisp.pp" "kadisp/ssd1780_oled_cntrl.pp" "eZ_include/usbstk5515.pp" "eZ_include/usbstk5515_gpio.pp" "eZ_include/usbstk5515_i2c.pp" "eZ_include/usbstk5515_led.pp" 
+	-$(RM) "kairq.obj" "src/main.obj" "kadisp/font_8x6_philippe.obj" "kadisp/kadisp.obj" "kadisp/ssd1780_oled_cntrl.obj" "eZ_include/usbstk5515.obj" "eZ_include/usbstk5515_gpio.obj" "eZ_include/usbstk5515_i2c.obj" "eZ_include/usbstk5515_led.obj" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

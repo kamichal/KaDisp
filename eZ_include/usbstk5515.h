@@ -17,12 +17,30 @@ extern "C" {
 #endif
 
 
-#define Uint32  unsigned long
+#ifndef Uint32
+#define Uint32 unsigned long
+#endif
+
+#ifndef Uint16
 #define Uint16  unsigned short
+#endif
+
+#ifndef Uint8
 #define Uint8   unsigned char
-#define Int32   int
-#define Int16   short
-#define Int8    char
+#endif
+
+#ifndef Int32
+#define Int32  signed int
+#endif
+
+#ifndef Int16
+#define Int16  signed short
+#endif
+
+#ifndef Int8
+#define Int8   signed char
+#endif
+
 
 #define SW_BREAKPOINT      while(1);
 /* ------------------------------------------------------------------------ *

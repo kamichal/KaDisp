@@ -4,5 +4,5 @@
 
 USER_OBJS :=
 
-LIBS := -l"libc.a"
+LIBS := -l"libc.a" -l/km/ti/c55xx_csl/build/C55XXCSL_LP.lib
 

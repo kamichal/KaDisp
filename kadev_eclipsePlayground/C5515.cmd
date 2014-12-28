@@ -24,7 +24,8 @@
 MEMORY
 {
     MMR:     o = 0x000000  l = 0x0000c0  /* 192B Memory Mapped Registers */
-    DARAM0:  o = 0x0000C0  l = 0x001F40  /* 8kB Dual Access RAM 0 */
+    VEC: 	 o = 0x0000C0  l = 0x000300  /* on-chip ROM vectors */
+    DARAM0:  o = 0x000400  l = 0x001A00  /* 8kB Dual Access RAM 0 */
     DARAM1:  o = 0x002000  l = 0x002000  /* 8kB Dual Access RAM 1 */
     DARAM2:  o = 0x004000  l = 0x002000  /* 8kB Dual Access RAM 2 */
     DARAM3:  o = 0x006000  l = 0x002000  /* 8kB Dual Access RAM 3 */  
@@ -73,6 +74,7 @@ MEMORY
     CS5:     o = 0xF00000  l = 0x0E0000  /* 1MB CS5 external memory space */
     ROM:     o = 0xFE0000  l = 0x01FF00  /* 128kB ROM (MPNMC=0) or CS5 (MPNMC=1) */
     VECS:    o = 0xFFFF00  l = 0x000100  /* reset vector */
+
 }                   
                     
 
@@ -94,7 +96,7 @@ SECTIONS
    .cio      >  SARAM2                /* C I/O buffers               */
    .args     >  SARAM2                /* Arguments to main()         */
 
-    vectors  >  VECS                  /* Interrupt vectors           */
+    vectors  >  VEC                  /* Interrupt vectors           */
 
 //   .ioport   >  IOPORT PAGE 2         /* Global & static ioport vars */
 }
