@@ -83,11 +83,11 @@ SECTIONS
    .text     >> SARAM0|SARAM1|SARAM2|SARAM3|SARAM4|SARAM5|SARAM6|SARAM7  /* Code                        */
 
    /* Both stacks must be on same physical memory page               */
-   .stack    >> DARAM0|SARAM3|SARAM4|SARAM5               /* Primary system stack        */
+   .stack    >  DARAM0|SARAM3|SARAM4|SARAM5               /* Primary system stack        */
    .sysstack >  DARAM0                /* Secondary system stack      */
 
-   .data     >> DARAM0|SARAM0|SARAM1  /* Initialized vars            */
-   .bss      >> DARAM0|SARAM0|SARAM1  /* Global & static vars        */
+   .data     >> DARAM0|SARAM0|SARAM1|SARAM2  /* Initialized vars            */
+   .bss      >> DARAM0|SARAM0|SARAM1|SARAM2  /* Global & static vars        */
    .const    >> DARAM0|SARAM0|SARAM1  /* Constant data               */
    .sysmem   >  DARAM0|SARAM0|SARAM1  /* Dynamic memory (malloc)     */
    .switch   >  SARAM2                /* Switch statement tables     */

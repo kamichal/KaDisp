@@ -9,6 +9,9 @@
 #define KAIRQ_H_
 
 
+/* Example Function */
+int sar_interupt_test();
+
 
 
 #endif /* KAIRQ_H_ */

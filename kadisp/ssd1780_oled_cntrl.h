@@ -104,7 +104,11 @@ Int16 SSD1780_set_display_start_line(Uint8 line_6b);
 Int16 SSD1780_clear_graphic_ram(void);
 
 void SSD1780_setup_default_scrolling(void);
+
+void SSD1780_set_vertical_offset(Uint8 v_pos_6bit);
+
 void SSD1780_set_vertical_scroll_area(Uint8 fixed_height, Uint8 floating_height);
+
 void SSD1780_setup_horizontal_scroll(
                                      Uint8 start_page,
                                      Uint8 end_page,

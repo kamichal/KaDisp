@@ -98,6 +98,7 @@
  * ================
  * 22-Sep-2008  Created
  * 10-Jul-2012  Added C5517 Compatibility
+ * 28-Dec-2014  Kamichal's refactor and development
  * ============================================================================
  */
 
@@ -106,6 +107,9 @@
 #include <csl_general.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <ka_pp.h>
+
+#include "kairq.h"
 
 #define CSL_TEST_FAILED         (1)
 #define CSL_TEST_PASSED         (0)
@@ -120,7 +124,8 @@ CSL_SarHandleObj *SarHandle;
 Uint32 sarRegDataAddr = 0x7014;
 
 Uint16 readBuffer;
-int i = 0;
+volatile int g_counter = 0;
+
 //---------Function prototypes---------
 /** Interrupt Service Routine */
 interrupt void sarISR(void);
@@ -128,8 +133,6 @@ interrupt void sarISR(void);
 /* Reference the start of the interrupt vector table */
 /* This symbol is defined in file vectors.asm       */
 extern void VECSTART(void);
-/* Example Function */
-int sar_test_Int_keypad_voltage();
 
 /////INSTRUMENTATION FOR BATCH TESTING -- Part 1 --
 /////  Define PaSs_StAtE variable for catching errors as program executes.
@@ -138,47 +141,18 @@ volatile Int16 PaSs_StAtE = 0x0001; // Init to 1. Reset to 0 at any monitored ex
 volatile Int16 PaSs = 0x0000; // Init to 0.  Updated later with PaSs_StAtE when and if
 /////                                  program flow reaches expected exit point(s).
 /////
-void main_irq(void)
-{
-    int status;
 
-    printf("CSL INTC MODULE TEST\n\n");
+#define expect_CSL_TEST_PASSED(fcn_call) expect_match_ret_msg(fcn_call, CSL_TEST_PASSED, " KAIRQ TEST FAILED ", CSL_TEST_FAILED)
 
-    status = sar_test_Int_keypad_voltage();
-    if (CSL_TEST_PASSED == status)
-    {
-        printf("sar_test_Int_keypad_voltage is passed\n");
-    }
-    else
-    {
-        printf("sar_test_Int_keypad_voltage is failed\n");
+#define expect_CSL_SOK(fcn_call) expect_match_ret_msg(fcn_call, CSL_SOK, " KAIRQ TEST FAILED ", CSL_TEST_FAILED)
 
-        /////INSTRUMENTATION FOR BATCH TESTING -- Part 2 --
-        /////  Reseting PaSs_StAtE to 0 if error detected here.
-        PaSs_StAtE = 0x0000; // Was intialized to 1 at declaration.
-    }
-    /////
 
-    printf("\nCSL INTC MODULE TEST COMPLETED!!\n");
 
-    /////INSTRUMENTATION FOR BATCH TESTING -- Part 3 --
-    /////  At program exit, copy "PaSs_StAtE" into "PaSs".
-    PaSs = PaSs_StAtE; //If flow gets here, override PaSs' initial 0 with
-    /////                   // pass/fail value determined during program execution.
-    /////  Note:  Program should next exit to C$$EXIT and halt, where DSS, under
-    /////   control of a host PC script, will read and record the PaSs' value.
-    /////
-}
-
-/* Testing of SAR A/D Keypad Voltage Measurement */
-int sar_test_Int_keypad_voltage(void)
+int init_irq_app(void)
 {
     Bool flag = 1;
-    CSL_Status status;
-    CSL_SarChSetup param;
+
     int chanNo;
-    CSL_IRQ_Config irqConfig;
-    CSL_IRQ_Config irqQuery;
 
     printf("Testing INTC using SAR module\n");
     printf("Press Any Button on the EVM Keypad\n");
@@ -197,132 +171,110 @@ int sar_test_Int_keypad_voltage(void)
 
     /* IRQ init call*/
     IRQ_init((CSL_IRQ_Dispatch*) 0x0000, 0);
-    /* IRQ_config */
-    irqConfig.funcAddr = &sarISR;
-    irqConfig.funcArg = 2;
-    IRQ_config(SAR_EVENT, &irqConfig);
 
-    /* Getconfig */
-    IRQ_getConfig(SAR_EVENT, &irqQuery);
-    if (irqQuery.funcAddr != irqConfig.funcAddr)
     {
-        printf("Wrong ISR address\n");
+        CSL_IRQ_Config irqConfig;
+        CSL_IRQ_Config irqQuery;
+
+        /* IRQ_config */
+        irqConfig.funcAddr = &sarISR;
+        irqConfig.funcArg = 2;
+
+        IRQ_config(SAR_EVENT, &irqConfig);
+
+        /* Getconfig */
+        IRQ_getConfig(SAR_EVENT, &irqQuery);
+
+        if (irqQuery.funcAddr != irqConfig.funcAddr)
+        {
+            printf("Wrong ISR address\n");
+        }
     }
+
     /* Initialize the SAR module */
-    status = SAR_init();
-    if (status != CSL_SOK)
-    {
-        printf("SAR Init Failed!!\n");
-        return CSL_TEST_FAILED;
-    }
+    expect_CSL_SOK(SAR_init())
 
     /* Open SAR channel */
-    status = SAR_chanOpen(&SarObj, CSL_SAR_CHAN_3);
+    expect_CSL_SOK(SAR_chanOpen(&SarObj, CSL_SAR_CHAN_3))
+
     SarHandle = &SarObj;
-    if (status != CSL_SOK)
-    {
-        printf("SAR_chanOpen Failed!!\n");
-        return CSL_TEST_FAILED;
-    }
 
     /* Initialize channel */
-    status = SAR_chanInit(SarHandle);
-    if (status != CSL_SOK)
-    {
-        printf("SAR_chanInit Failed!!\n");
-        return CSL_TEST_FAILED;
-    }
+    expect_CSL_SOK(SAR_chanInit(SarHandle))
 
     /* Clear any pending Interrupt */
     IRQ_clear(SAR_EVENT);
     IRQ_test(SAR_EVENT, &flag);
     IRQ_map(SAR_EVENT);
     /* Set Arguments */
-    status = IRQ_setArg(SAR_EVENT, sarRegDataAddr);
-    if (status != CSL_SOK)
-    {
-        printf("IRQ_setArg failed!!\n");
-        return CSL_TEST_FAILED;
-    }
+    expect_CSL_SOK(IRQ_setArg(SAR_EVENT, sarRegDataAddr))
+
     /* Register the ISR */
     IRQ_plug(SAR_EVENT, &sarISR);
 
-    param.OpMode = CSL_SAR_INTERRUPT;
-    param.MultiCh = CSL_SAR_NO_DISCHARGE;
-    param.RefVoltage = CSL_SAR_REF_VIN;
-    param.SysClkDiv = 0x0b;
-    /* Configuration for SAR module */
-    status = SAR_chanSetup(SarHandle, &param);
-    if (status != CSL_SOK)
     {
-        printf("SAR_chanConfig Failed!!\n");
-        return CSL_TEST_FAILED;
+        CSL_SarChSetup param;
+        param.OpMode = CSL_SAR_INTERRUPT;
+        param.MultiCh = CSL_SAR_NO_DISCHARGE;
+        param.RefVoltage = CSL_SAR_REF_VIN;
+        param.SysClkDiv = 0x0b;
+        /* Configuration for SAR module */
+        expect_CSL_SOK(SAR_chanSetup(SarHandle, &param))
     }
 
     /* Set channel cycle set */
-    status = SAR_chanCycSet(SarHandle, CSL_SAR_SINGLE_CONVERSION);
-    if (status != CSL_SOK)
-    {
-        printf("SAR_chanCycSet Failed!!\n");
-                    return CSL_TEST_FAILED;
-    }
+    expect_CSL_SOK(SAR_chanCycSet(SarHandle, CSL_SAR_SINGLE_CONVERSION))
+
     /* set ADC Measurement parameters */
-    status = SAR_A2DMeasParamSet(SarHandle, CSL_KEYPAD_MEAS, &chanNo);
-    if (status != CSL_SOK)
-    {
-        printf("SAR_A2DMeasParamSet Failed!!\n");
-        return CSL_TEST_FAILED;
-    }
+    expect_CSL_SOK(SAR_A2DMeasParamSet(SarHandle, CSL_KEYPAD_MEAS, &chanNo))
 
     /* Enabling Interrupt */
     IRQ_enable(SAR_EVENT);
     IRQ_globalEnable();
 
-    /* start the conversion */
-    status = SAR_startConversion(SarHandle);
-    if (status != CSL_SOK)
-    {
-        printf("SAR_startConversion Failed!!\n");
-        return CSL_TEST_FAILED;
-    }
 
-    while (i != 1)
+    return CSL_TEST_PASSED;
+}
+
+int deinit_SAR(CSL_SarHandleObj *sar_handle)
+{
+    /* Stop the conversion */
+    expect_CSL_SOK(SAR_stopConversion(sar_handle))
+    /* Close the channel */
+    expect_CSL_SOK(SAR_chanClose(sar_handle))
+    /* Deinit */
+    expect_CSL_SOK(SAR_deInit())
+    return CSL_TEST_PASSED;
+}
+
+
+/* Testing of SAR A/D Keypad Voltage Measurement */
+int sar_interupt_test(void)
+{
+    expect_CSL_TEST_PASSED(init_irq_app())
+    expect_CSL_SOK(SAR_startConversion(SarHandle))
+
+    while (g_counter !=0)
         ;
 
     printf("After ISR :SAR ADC read data 0x%x\n", readBuffer);
 
-    /* Stop the conversion */
-    status = SAR_stopConversion(SarHandle);
-    if (status != CSL_SOK)
-    {
-        printf("SAR_stopConversion Failed!!\n");
-        return CSL_TEST_FAILED;
-    }
-    /* Close the channel */
-    status = SAR_chanClose(SarHandle);
-    if (status != CSL_SOK)
-    {
-        printf("SAR_chanClose Failed!!\n");
-        return CSL_TEST_FAILED;
-    }
-    /* Deinit */
-    status = SAR_deInit();
-    if (status != CSL_SOK)
-    {
-        printf("SAR_deInit Failed!!\n");
-        return CSL_TEST_FAILED;
-    }
+    expect_CSL_TEST_PASSED(deinit_SAR(SarHandle))
+
+    printf("SAR interrupt test returns.\n");
 
     return CSL_TEST_PASSED;
 }
+
 
 // ISR to read ADC data
 interrupt void sarISR(void)
 {
     Uint32 RegAddr;
-    i = 0;
+    g_counter = 0;
     /* Get Arguments which was set using IRQ_setArg */
     IRQ_getArg(SAR_EVENT, &RegAddr);
+
     if (RegAddr != sarRegDataAddr)
     {
         printf("IRQ_getArg is failed\n");
@@ -331,7 +283,13 @@ interrupt void sarISR(void)
         PaSs_StAtE = 0x0000; // Was intialized to 1 at declaration.
         /////
     }
-    IRQ_disable(SAR_EVENT);
+
     SAR_readData(SarHandle, &readBuffer);
-    i++;
+
+    printf("SAR triggs an interrupt # %d!, read: %d\n", g_counter, readBuffer);
+
+    g_counter++;
+
+//    if(g_counter > 10)
+        IRQ_disable(SAR_EVENT);
 }
