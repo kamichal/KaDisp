@@ -55,13 +55,13 @@ void KaDisp_clear(void)
             g_page_cache[p][x] = 0;
     }
 
-    KaDisp_send_entire_cache();
+    KaDisp_send_cache_all_pages();
 }
 
 
 
 
-void Kaprintf(Uint8 line_position, char * format, ...)
+void ka_printf(Uint8 line_position, char * format, ...)
 {
     char buffer[256];
     va_list args;
@@ -89,7 +89,7 @@ void KaDisp_static_string(Uint8 line_position, char * letter)
     Uint16 p = line_position % KADISP_USED_PAGE_NUMBER;
     g_page_cache[p][buffer_column++] = SSD1780_SEND_DATA;
 
-    // till buffer not terminated by null ('/0')or exceed max_length
+    // till buffer terminated by null ('/0')or exceed max_length
     while ((*letter != 0) && max_length--)
     {
         for (font_column = 0; font_column < 6; font_column++) //used 6 px width font
@@ -110,19 +110,19 @@ void KaDisp_static_string(Uint8 line_position, char * letter)
 #endif
 
 #if KADISP_AUTO_SCROLL_TO_LAST_PAGE
-    KaDisp_scroll_to_page(p);
+    KaDisp_scroll_window_to_page(p);
 #endif
 }
 
 
-void KaDisp_scroll_to_page(Uint8 line_position)
+void KaDisp_scroll_window_to_page(Uint8 line_position)
 {
     SSD1780_send_cmd_val(SSD1780_SET_VERTICAL_OFFSET, (line_position * 8) & 0x3F);  // 0xD3
 }
 
 
 
-void KaDisp_scroll_to_point(Uint8 display_offset)
+void KaDisp_scroll_window_to_point(Uint8 display_offset)
 {
     SSD1780_send_cmd_val(SSD1780_SET_VERTICAL_OFFSET, display_offset & 0x3F); // 0xD3 // 0x3F = max 64 horizontal lines
 }
@@ -132,11 +132,15 @@ void KaDisp_scroll_to_point(Uint8 display_offset)
 void KaDisp_send_page_cache(Uint8 line_position)
 {
     Uint16 p = line_position % KADISP_USED_PAGE_NUMBER;
+    Uint8 token = SSD1780_SEND_DATA;
     SSD1780_set_PAM_page_addres(p);
     SSD1780_set_PAM_column_start_addres(31); // Skip 32 columns
     // that's because the first 32 columns (left edge) are in ram, but not displayed.
 
     USBSTK5515_I2C_write(OSD9616_I2C_ADDR, &g_page_cache[p][0], KADISP_CACHE_LINE_LGH);
+
+//    USBSTK5515_I2C_write(OSD9616_I2C_ADDR, &token, 1);
+//    USBSTK5515_I2C_write(OSD9616_I2C_ADDR, &g_page_cache[p][1], KADISP_CACHE_LINE_LGH-1);
 
 //    SSD1780_set_PAM_column_start_addres(0);
 }
@@ -179,7 +183,7 @@ void KaDisp_send_page_cache_range(Uint8 page_number, Uint8 start_col, Uint8 widt
 
 
 
-void KaDisp_send_entire_cache(void)
+void KaDisp_send_cache_all_pages(void)
 {
     Uint16 p;
     for (p = 0; p < KADISP_USED_PAGE_NUMBER; p++)

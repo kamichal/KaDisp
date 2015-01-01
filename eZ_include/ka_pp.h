@@ -20,6 +20,11 @@
 
 #define expect_match(fcn_call, exp_val, ret_val) expect_match_ret_msg(fcn_call, exp_val, "", ret_val)
 
+#define k_abs(a)                (a >= 0) ? a : -a
+#define k_min(a,b)              (a < b) ? a : b
+#define k_max(a,b)              (a > b) ? a : b
+#define k_min_max(a,min,max)    ((a < min) ? min : (a>max ? max : a))
+
 
 
 #endif /* KA_PP_H_ */

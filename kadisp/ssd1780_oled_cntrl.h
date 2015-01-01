@@ -1,5 +1,6 @@
 /*
  * osd9616.h
+ * Set of lower routines for OSD9616 display's controller chip.
  *
  *  Created on: Dec 2, 2014
  *      Author: kamichal

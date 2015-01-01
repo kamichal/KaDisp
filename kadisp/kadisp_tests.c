@@ -5,14 +5,19 @@
  *      Author: kamichal
  */
 
+#include "ka_pp.h"
 #include "kadisp.h"
 #include "kadisp_tests.h"
 
-#include <math.h>
+//#include <math.h>
+
+
 
 Int16 fastLog2(Int32 val)
 {
     Int16 ret = 0;
+    val = k_abs(val);
+
     while (val > 0)
     {
         ret++;
@@ -21,26 +26,44 @@ Int16 fastLog2(Int32 val)
     return ret;
 }
 
-void KaDisp_test_01(void)
+
+void KaDisp_test_run_all(void)
 {
+    Uint16 i;
+
     /* Initialize BSL */
     USBSTK5515_init();
     /* Initialize I2C */
     USBSTK5515_I2C_init();
+
+
+    for(i = 0; i < 2; i++)
+    {
+        KaDisp_test_05();
+        KaDisp_test_04();
+        KaDisp_test_03();
+        KaDisp_test_02();
+        KaDisp_test_01();
+    }
+}
+
+
+void KaDisp_test_01(void)
+{
     printf("\n KaDisp_test_01() \n");
 
     KaDisp_init();
 
-    Kaprintf(0, "This is");
-    Kaprintf(1, "kamichal's");
-    Kaprintf(2, "implementation");
-    Kaprintf(3, "of the OSD%d", 9616);
-    Kaprintf(4, "display");
-    Kaprintf(5, "driver SSD1780");
-    Kaprintf(6, "on C%d", 5515);
-    Kaprintf(7, "eZdsp.");
+    ka_printf(0, "This is");
+    ka_printf(1, "kamichal's");
+    ka_printf(2, "implementation");
+    ka_printf(3, "of the OSD%d", 9616);
+    ka_printf(4, "display");
+    ka_printf(5, "driver SSD1780");
+    ka_printf(6, "on C%d", 5515);
+    ka_printf(7, "eZdsp.");
 
-    KaDisp_send_entire_cache();
+    KaDisp_send_cache_all_pages();
 
     {
         Uint8 pos = 0;
@@ -55,7 +78,7 @@ void KaDisp_test_01(void)
 
             if (pos % 0x3F == 0x3F - 12)
             {
-                Kaprintf(7, "eZdsp.%10d", times--);
+                ka_printf(7, "eZdsp.%10d", times--);
                 KaDisp_send_page_cache(7);
             }
             pos++;
@@ -66,22 +89,18 @@ void KaDisp_test_01(void)
 void KaDisp_test_02(void)
 {
     Int16 times = 0;
-    /* Initialize BSL */
-    USBSTK5515_init();
-    /* Initialize I2C */
-    USBSTK5515_I2C_init();
 
     KaDisp_init();
 
-    Kaprintf(0, "e         frames");
+    ka_printf(0, "          frames");
     KaDisp_send_page_cache(0);
 
-    Kaprintf(1, "run max fps");
+    ka_printf(1, "run max fps");
     KaDisp_send_page_cache(1);
 
     do // run as fast as you can
     {
-        Kaprintf(0, "  %d", ++times);
+        ka_printf(0, "%d", ++times);
         KaDisp_send_page_cache_range(0, 0, 40);
 
         //KaDisp_send_page_cache_range(0, 0, 40);
@@ -92,23 +111,28 @@ void KaDisp_test_02(void)
 void KaDisp_test_03(void)
 {
     Int16 times = 0;
-    /* Initialize BSL */
-    USBSTK5515_init();
-    /* Initialize I2C */
-    USBSTK5515_I2C_init();
+    const Int16 max_count = 1024;
+    Uint16 idx;
 
     KaDisp_init();
 
-    Kaprintf(1, "binary counter");
-    KaDisp_send_page_cache(1);
-
     g_page_cache[0][0] = SSD1780_SEND_DATA;
 
-    while (times < 0x1000) // run as fast as you can
+    for (idx = 1; idx < fastLog2(max_count); idx += 2)
     {
-        Uint16 idx;
-        Int16 tmp = times;
+        g_page_cache[0][idx] = 0x02;
+        g_page_cache[0][idx + 1] = 0x02;
 
+    }
+    KaDisp_send_page_cache(0);
+
+    ka_printf(1, "binary counter");
+    KaDisp_send_page_cache(1);
+
+
+    while (times < max_count) // run as fast as you can
+    {
+        Int16 tmp = times;
         for (idx = 1; idx < KADISP_CACHE_LINE_LGH; idx += 6)
         {
             if (tmp & 0x1)
@@ -119,7 +143,6 @@ void KaDisp_test_03(void)
                 g_page_cache[0][idx + 3] = 0x7C;
                 g_page_cache[0][idx + 4] = 0x70;
                 g_page_cache[0][idx + 5] = 0x00;
-
             }
             else
             {
@@ -140,66 +163,59 @@ void KaDisp_test_03(void)
     }
 }
 
-void KaDisp_HorizontalBar(Uint8 bar_w)
+void KaDisp_HorizontalBar(Uint8 page, Uint8 bar_w)
 {
     Uint16 idx;
+    page = page % KADISP_USED_PAGE_NUMBER;
+
     for (idx = 1; idx < bar_w + 1; idx += 2)
     {
-        g_page_cache[0][idx] = 0x7C;
-        g_page_cache[0][idx + 1] = 0x7C + 1;
+        g_page_cache[page][idx] = 0x7C;
+        g_page_cache[page][idx + 1] = 0x7C + 1;
     }
     for (idx = bar_w + 1; idx < KADISP_CACHE_LINE_LGH; idx += 2)
     {
-        g_page_cache[0][idx] = 0x00;
-        g_page_cache[0][idx + 1] = 0x00;
+        g_page_cache[page][idx] = 0x00;
+        g_page_cache[page][idx + 1] = 0x00;
     }
 }
 
 void KaDisp_test_04(void)
 {
-    Int16 times = 0;
-    /* Initialize BSL */
-    USBSTK5515_init();
-    /* Initialize I2C */
-    USBSTK5515_I2C_init();
+    Int16 width = 0;
 
     KaDisp_init();
 
-    Kaprintf(1, "bar");
+    ka_printf(1, "bar");
     KaDisp_send_page_cache(1);
 
     g_page_cache[0][0] = SSD1780_SEND_DATA;
 
-    while (times < 128)
+    while (width < 128)
     {
-        KaDisp_HorizontalBar(times);
+        KaDisp_HorizontalBar(0, width);
         KaDisp_send_page_cache(0);
-        //KaDisp_send_page_cache_range(0, 0, times);
 
-        Kaprintf(1, "bar width: %d", times);
+        ka_printf(1, "bar width: %d", width);
         KaDisp_send_page_cache(1);
 
         USBSTK5515_waitusec(10000);
-        times++;
+        width++;
 
     }
 }
 void KaDisp_test_05(void)
 {
     Int16 times = 0;
-    /* Initialize BSL */
-    USBSTK5515_init();
-    /* Initialize I2C */
-    USBSTK5515_I2C_init();
 
     KaDisp_init();
 
-    Kaprintf(1, "grayscale ?");
+    ka_printf(1, "grayscale ?");
     KaDisp_send_page_cache(1);
 
     g_page_cache[0][0] = SSD1780_SEND_DATA;
 
-    while (times < 0x1280)
+    while (times < 0x12)
     {
         Uint8 i;
 

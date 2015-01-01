@@ -1,4 +1,4 @@
-/*
+/*///////////**
  * main.c
  *
  *  Created on: Dec 21, 2014
@@ -21,7 +21,7 @@
 #include <usbstk5515_i2c.h>
 
 //#include <csl_sar.h>
-//#include <csl_intc.h>
+//#include <csl_intc.h>*
 //#include <csl_general.h>
 
 
@@ -35,14 +35,6 @@
 void main(void)
 {
     sar_interupt_test();
+    KaDisp_test_run_all();
 
-    //KaDisp_test_01();
-
-    KaDisp_test_05();
-
-    KaDisp_test_04();
-
-    KaDisp_test_03();
-
-    KaDisp_test_02();
 }

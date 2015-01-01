@@ -10,16 +10,13 @@
 
 
 
+void KaDisp_test_run_all(void);
+
 void KaDisp_test_01(void);
-
 void KaDisp_test_02(void);
-
 void KaDisp_test_03(void);
-
 void KaDisp_test_04(void);
-
 void KaDisp_test_05(void);
-
 
 void KaDisp_test_pattern(Uint8 line_position);
 

@@ -28,15 +28,15 @@ extern "C" {
 extern Uint8 g_page_cache[KADISP_USED_PAGE_NUMBER][KADISP_CACHE_LINE_LGH];
 
 
-void Kaprintf(Uint8 page, char * format, ...);
+void ka_printf(Uint8 page, char * format, ...);
 
-void KaDisp_send_entire_cache();
+void KaDisp_send_cache_all_pages();
 void KaDisp_send_page_cache(Uint8 page);
 void KaDisp_send_page_cache_range(Uint8 page_number, Uint8 start_col, Uint8 width);
 
 void KaDisp_static_string(Uint8 page, char * text);
 void KaDisp_init(void);
-void KaDisp_scroll_to_page(Uint8 page);
+void KaDisp_scroll_window_to_page(Uint8 page);
 void KaDisp_clear(void);
 #endif /* SSD1780_OLED_CONTROLLER_ */
 

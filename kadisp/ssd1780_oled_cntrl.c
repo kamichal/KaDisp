@@ -1,5 +1,6 @@
 /*
  * osd9616.c
+ * Set of lower routines for OSD9616 display's controller chip.
  *
  *  Created on: Dec 7, 2014
  *      Author: kamichal
@@ -23,14 +24,14 @@ void SSD1780_init(void)
 
     SSD1780_set_display_start_line(0);
 
-    SSD1780_set_contrast(0x2f);
+    SSD1780_set_contrast(0x3f);
 
     SSD1780_send_cmd(SSD1780_SET_SEGMENT_REMAP_COL0_TO_SEG0);   // 0xA0
     SSD1780_send_cmd(SSD1780_DISPLAY_NORMAL);                   // 0xA6
-    SSD1780_send_cmd_val(SSD1780_SET_MULTIPLEX_RATIO, 0x3F);    // 0xA8
+    SSD1780_send_cmd_val(SSD1780_SET_MULTIPLEX_RATIO, 0x3F);    // 0xA8, default: 0x3F, gives 8 pages
 
-    SSD1780_send_cmd_val(SSD1780_SET_VERTICAL_OFFSET, 0x00);  // 0xD3 Not offset
-    SSD1780_send_cmd_val(SSD1780_SET_CLOCK_DIV_RATIO, 0xf0); // 0xD5 Set divide ratio
+    SSD1780_send_cmd_val(SSD1780_SET_VERTICAL_OFFSET, 0x00);    // 0xD3 No offset
+    SSD1780_send_cmd_val(SSD1780_SET_CLOCK_DIV_RATIO, 0xf0);    // 0xD5 Set divide ratio
     SSD1780_send_cmd_val(SSD1780_SET_PRE_CHARGE_PERIOD, 0x22);  // 0xD9
     SSD1780_send_cmd_val(SSD1780_SET_COM_PINS_HW_CONFIG, 0x02); // 0xDA
     SSD1780_send_cmd_val(SSD1780_SET_COMH_DESELECT_LEVEL, 0x49); // 0xDB 0.83*vref
