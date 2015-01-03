@@ -17,6 +17,7 @@ void KaDisp_test_02(void);
 void KaDisp_test_03(void);
 void KaDisp_test_04(void);
 void KaDisp_test_05(void);
+void KaDisp_test_06(void);
 
 void KaDisp_test_pattern(Uint8 line_position);
 

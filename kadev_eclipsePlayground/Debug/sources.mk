@@ -99,6 +99,7 @@ S64_DEPS__QUOTED :=
 SUBDIRS := \
 . \
 src \
+kadisp/tinyEM \
 kadisp \
 eZ_include \
 

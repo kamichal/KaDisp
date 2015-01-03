@@ -35,5 +35,15 @@
 			<type>2</type>
 			<location>/home/kamichal/m_repo/kamichalRepo/kadev/kadisp</location>
 		</link>
+		<link>
+			<name>src</name>
+			<type>2</type>
+			<location>/home/kamichal/m_repo/kamichalRepo/kadev/src</location>
+		</link>
+		<link>
+			<name>kadisp/tinyEM</name>
+			<type>2</type>
+			<location>/home/kamichal/m_repo/kamichalRepo/TinyEM/app/src</location>
+		</link>
 	</linkedResources>
 </projectDescription>

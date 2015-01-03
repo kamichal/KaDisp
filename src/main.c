@@ -19,7 +19,7 @@
 
 #include <usbstk5515.h>
 #include <usbstk5515_i2c.h>
-
+//#include <tinyEm.h>
 //#include <csl_sar.h>
 //#include <csl_intc.h>*
 //#include <csl_general.h>
@@ -34,7 +34,16 @@
 
 void main(void)
 {
+
     sar_interupt_test();
     KaDisp_test_run_all();
 
 }
+
+
+
+
+
+
+
+

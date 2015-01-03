@@ -4,9 +4,9 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../src/kairq.c \
-../src/main.c \
-../src/rtc_ex.c 
+/home/kamichal/m_repo/kamichalRepo/kadev/src/kairq.c \
+/home/kamichal/m_repo/kamichalRepo/kadev/src/main.c \
+/home/kamichal/m_repo/kamichalRepo/kadev/src/rtc_ex.c 
 
 OBJS += \
 ./src/kairq.obj \
@@ -29,8 +29,8 @@ OBJS__QUOTED += \
 "src/rtc_ex.obj" 
 
 C_SRCS__QUOTED += \
-"../src/kairq.c" \
-"../src/main.c" \
-"../src/rtc_ex.c" 
+"/home/kamichal/m_repo/kamichalRepo/kadev/src/kairq.c" \
+"/home/kamichal/m_repo/kamichalRepo/kadev/src/main.c" \
+"/home/kamichal/m_repo/kamichalRepo/kadev/src/rtc_ex.c" 
 
 

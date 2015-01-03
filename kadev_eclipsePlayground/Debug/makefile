@@ -14,6 +14,8 @@ $(GEN_CMDS__FLAG) \
 "./kadisp/kadisp_tests.obj" \
 "./kadisp/kadisp.obj" \
 "./kadisp/font_8x6_philippe.obj" \
+"./kadisp/tinyEM/CTinyEM.obj" \
+"./kadisp/tinyEM/CQueue.obj" \
 "./src/rtc_ex.obj" \
 "./src/main.obj" \
 "./src/kairq.obj" \
@@ -30,10 +32,12 @@ RMDIR := rm -rf
 -include sources.mk
 -include subdir_vars.mk
 -include src/subdir_vars.mk
+-include kadisp/tinyEM/subdir_vars.mk
 -include kadisp/subdir_vars.mk
 -include eZ_include/subdir_vars.mk
 -include subdir_rules.mk
 -include src/subdir_rules.mk
+-include kadisp/tinyEM/subdir_rules.mk
 -include kadisp/subdir_rules.mk
 -include eZ_include/subdir_rules.mk
 -include objects.mk
@@ -137,8 +141,9 @@ kadev_ecl.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 # Other Targets
 clean:
 	-$(RM) $(C5500_EXECUTABLE_OUTPUTS__QUOTED) "kadev_ecl.out"
+	-$(RM) "kadisp/tinyEM/CQueue.pp" "kadisp/tinyEM/CTinyEM.pp" 
 	-$(RM) "src/kairq.pp" "src/main.pp" "src/rtc_ex.pp" "kadisp/font_8x6_philippe.pp" "kadisp/kadisp.pp" "kadisp/kadisp_tests.pp" "kadisp/ssd1780_oled_cntrl.pp" "eZ_include/usbstk5515.pp" "eZ_include/usbstk5515_gpio.pp" "eZ_include/usbstk5515_i2c.pp" "eZ_include/usbstk5515_led.pp" 
-	-$(RM) "src/kairq.obj" "src/main.obj" "src/rtc_ex.obj" "kadisp/font_8x6_philippe.obj" "kadisp/kadisp.obj" "kadisp/kadisp_tests.obj" "kadisp/ssd1780_oled_cntrl.obj" "eZ_include/usbstk5515.obj" "eZ_include/usbstk5515_gpio.obj" "eZ_include/usbstk5515_i2c.obj" "eZ_include/usbstk5515_led.obj" 
+	-$(RM) "src/kairq.obj" "src/main.obj" "src/rtc_ex.obj" "kadisp/tinyEM/CQueue.obj" "kadisp/tinyEM/CTinyEM.obj" "kadisp/font_8x6_philippe.obj" "kadisp/kadisp.obj" "kadisp/kadisp_tests.obj" "kadisp/ssd1780_oled_cntrl.obj" "eZ_include/usbstk5515.obj" "eZ_include/usbstk5515_gpio.obj" "eZ_include/usbstk5515_i2c.obj" "eZ_include/usbstk5515_led.obj" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

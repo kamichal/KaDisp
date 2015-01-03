@@ -11,8 +11,6 @@
 
 //#include <math.h>
 
-
-
 Int16 fastLog2(Int32 val)
 {
     Int16 ret = 0;
@@ -26,7 +24,6 @@ Int16 fastLog2(Int32 val)
     return ret;
 }
 
-
 void KaDisp_test_run_all(void)
 {
     Uint16 i;
@@ -36,8 +33,7 @@ void KaDisp_test_run_all(void)
     /* Initialize I2C */
     USBSTK5515_I2C_init();
 
-
-    for(i = 0; i < 2; i++)
+    for (i = 0; i < 2; i++)
     {
         KaDisp_test_05();
         KaDisp_test_04();
@@ -46,7 +42,6 @@ void KaDisp_test_run_all(void)
         KaDisp_test_01();
     }
 }
-
 
 void KaDisp_test_01(void)
 {
@@ -127,8 +122,8 @@ void KaDisp_test_03(void)
     KaDisp_send_page_cache(0);
 
     ka_printf(1, "binary counter");
-    KaDisp_send_page_cache(1);
 
+    KaDisp_send_page_cache(1);
 
     while (times < max_count) // run as fast as you can
     {
@@ -163,7 +158,7 @@ void KaDisp_test_03(void)
     }
 }
 
-void KaDisp_HorizontalBar(Uint8 page, Uint8 bar_w)
+void KaDisp_DrawHorizontalBar(Uint8 page, Uint8 bar_w)
 {
     Uint16 idx;
     page = page % KADISP_USED_PAGE_NUMBER;
@@ -193,7 +188,7 @@ void KaDisp_test_04(void)
 
     while (width < 128)
     {
-        KaDisp_HorizontalBar(0, width);
+        KaDisp_DrawHorizontalBar(0, width);
         KaDisp_send_page_cache(0);
 
         ka_printf(1, "bar width: %d", width);
@@ -221,17 +216,51 @@ void KaDisp_test_05(void)
 
         for (i = 0; i < times % 64; i++)
         {
-            g_page_cache[0][i+1] = 0xFF;
+            g_page_cache[0][i + 1] = 0xFF;
         }
-        for (i = times %64 ; i < KADISP_CACHE_LINE_LGH; i++)
+        for (i = times % 64; i < KADISP_CACHE_LINE_LGH; i++)
         {
-            g_page_cache[0][i+1] = 0x00;
+            g_page_cache[0][i + 1] = 0x00;
         }
         KaDisp_send_page_cache(0);
 
         //USBSTK5515_waitusec(10000);
         times++;
 
+    }
+}
+
+void KaDisp_test_06(void)
+{
+    Int16 times = 1024;
+    const Int16 max_count = 1024;
+    Uint16 idx;
+    Uint16 page;
+
+    KaDisp_init();
+
+    for (page = 0; page < KADISP_USED_PAGE_NUMBER; page++)
+    {
+        g_page_cache[page][0] = SSD1780_SEND_DATA;
+
+        for (idx = 1; idx < KADISP_CACHE_LINE_LGH; idx += 6)
+        {
+            g_page_cache[page][idx] = 0x02 * (idx % 64);
+            g_page_cache[page][idx + 1] = 0x04 * (idx % 64);
+            g_page_cache[page][idx + 2] = 0x08 * (idx % 64);
+            g_page_cache[page][idx + 3] = 0x0F * (idx % 64);
+            g_page_cache[page][idx + 4] = 0xFF * (!(idx % 64));
+            g_page_cache[page][idx + 5] = 0xFF * (!(idx % 64));
+
+        }
+        KaDisp_send_page_cache(page);
+    }
+
+    while (times > 0)
+    {
+        KaDisp_scroll_window_to_page((Uint8) (times % KADISP_USED_PAGE_NUMBER));
+        USBSTK5515_waitusec(10000);
+        times--;
     }
 }
 
