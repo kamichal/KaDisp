@@ -102,7 +102,7 @@ Int16 SSD1780_set_VHAM_page_addres(Uint8 start_addres_3b, Uint8 end_addres_3b);
 Int16 SSD1780_set_PAM_column_start_addres(Uint8 addres_4b);
 Int16 SSD1780_set_PAM_page_addres(Uint8 addres_3b);
 Int16 SSD1780_set_display_start_line(Uint8 line_6b);
-Int16 SSD1780_clear_graphic_ram(void);
+Int16 SSD1780_clear_display_ram(void);
 
 void SSD1780_setup_default_scrolling(void);
 

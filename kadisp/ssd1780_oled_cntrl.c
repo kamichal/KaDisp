@@ -28,7 +28,7 @@ void SSD1780_init(void)
 
     SSD1780_send_cmd(SSD1780_SET_SEGMENT_REMAP_COL0_TO_SEG0);   // 0xA0
     SSD1780_send_cmd(SSD1780_DISPLAY_NORMAL);                   // 0xA6
-    SSD1780_send_cmd_val(SSD1780_SET_MULTIPLEX_RATIO, 0x3F);    // 0xA8, default: 0x3F, gives 8 pages
+    SSD1780_send_cmd_val(SSD1780_SET_MULTIPLEX_RATIO, 0x16);    // 0xA8, default: 0x3F, gives 8 pages
 
     SSD1780_send_cmd_val(SSD1780_SET_VERTICAL_OFFSET, 0x00);    // 0xD3 No offset
     SSD1780_send_cmd_val(SSD1780_SET_CLOCK_DIV_RATIO, 0xf0);    // 0xD5 Set divide ratio
@@ -39,7 +39,7 @@ void SSD1780_init(void)
 
     SSD1780_send_cmd(SSD1780_TURN_DISP_ON); // 0xAF
 
-    SSD1780_clear_graphic_ram();
+    SSD1780_clear_display_ram();
 
 
 }
@@ -190,7 +190,7 @@ void SSD1780_set_vertical_scroll_area(Uint8 fixed_height, Uint8 floating_height)
     USBSTK5515_I2C_write(OSD9616_I2C_ADDR, packet, 4);
 }
 
-Int16 SSD1780_clear_graphic_ram(void)
+Int16 SSD1780_clear_display_ram(void)
 {
     Int16 ret = 0;
     Uint16 page;
