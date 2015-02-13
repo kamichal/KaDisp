@@ -15,7 +15,32 @@
 
 void main(void)
 {
-    KaDisp_test_run_all();
+    Uint16 i;
+
+    /* Initialize BSL */
+    USBSTK5515_init();
+    /* Initialize I2C */
+    USBSTK5515_I2C_init();
+
+#if 0 // set 1 to run specific test only
+    while (1)
+    {
+        KaDisp_test_07();
+    }
+#else
+
+    for (i = 0; i < 2; i++)
+    {
+        KaDisp_test_01();
+        KaDisp_test_02();
+        KaDisp_test_03();
+        KaDisp_test_04();
+        KaDisp_test_05();
+        KaDisp_test_06();
+        KaDisp_test_07();
+    }
+
+#endif
 
 }
 

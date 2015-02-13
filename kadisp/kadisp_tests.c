@@ -24,37 +24,23 @@ Int16 fastLog2(Int32 val)
     return ret;
 }
 
-void KaDisp_test_run_all(void)
-{
-    Uint16 i;
-
-    /* Initialize BSL */
-    USBSTK5515_init();
-    /* Initialize I2C */
-    USBSTK5515_I2C_init();
-
-#if specific_test_only
-    while (1)
-    {
-        printf("KaDisp_test_06();\n");
-        KaDisp_test_06();
-    }
-
-#else
-    for (i = 0; i < 2; i++)
-    {
-        KaDisp_test_06();
-        KaDisp_test_05();
-        KaDisp_test_04();
-        KaDisp_test_03();
-        KaDisp_test_02();
-        KaDisp_test_01();
-    }
-#endif
-}
 
 void KaDisp_test_01(void)
 {
+    /* This test uses manual scrolling for the display.
+     * Initially each of the 8 lines is filled with sample text.
+     * Then the program goes into a long loop which is responsible
+     * for vertical scrolling of the display window (16x96px)
+     * over the whole display RAM (64x96px).
+     * The display's RAM content can be updated, which is shown
+     * within the loop.
+     * Of course, in regular usage, the DSP shouldn't be trapped in such
+     * a while loop. The "vertical" scroll event should be handled in
+     * an interrupt, e.g. once per 30ms. Then the DSP can do any other stuff.
+     * */
+    Uint8 pos = 0;
+    Int8 times = 3;
+
     printf("\n KaDisp_test_01() \n");
 
     KaDisp_init();
@@ -65,33 +51,44 @@ void KaDisp_test_01(void)
     KaDisp_printf(3, "of the OSD%d", 9616);
     KaDisp_printf(4, "display");
     KaDisp_printf(5, "driver SSD1780");
-    KaDisp_printf(6, "on C%d", 5515);
+    KaDisp_test_pattern(6);
     KaDisp_printf(7, "eZdsp.");
 
     KaDisp_send_cache_all_pages();
 
+    while (times >= 0)
     {
-        Uint8 pos = 0;
-        Int8 times = 3;
+        //move display window around ("manual" scrolling)
+        SSD1780_set_vertical_offset(pos);
+        USBSTK5515_waitusec(30000);
 
-        do
+        if (pos % 0x3F == 0x3F - 12)
         {
-            //move display window around ("manual" scrolling)
-            SSD1780_set_vertical_offset((Uint8) pos);
-            USBSTK5515_waitusec(20000);
-
-            if (pos % 0x3F == 0x3F - 12)
-            {
-                KaDisp_printf(7, "eZdsp.%10d", times--);
-                KaDisp_send_page_cache(7);
-            }
-            pos++;
-        } while (times >= 0);
+            // happens once per one full sweep
+            KaDisp_printf(7, "eZdsp.%10d", times--); //decrement count
+            KaDisp_send_page_cache(7);
+        }
+        pos++;
     }
+
 }
 
 void KaDisp_test_02(void)
 {
+    /* This test checks how fast the display can be updated with a text.
+     * It's a brute force method. The DSP is doing only one thing
+     * It sends a new string and after that - sends the next one in a loop.
+     * The measurement is affected by time of text processing.
+     * Unwrapping printf function takes some time. Simple pixel drawing should be faster.
+     *
+     * I haven't implemented measurement of frames per second
+     * because I haven't figured out any method for time measurement yet.
+     *
+     * For increasing the speed only small area of the display is being updated.
+     *
+     * Running the test you can notice that the "frames" word is kept on the display.
+     * That's because it's area is not updated. A trick :) */
+
     Int16 times = 0;
 
     KaDisp_init();
@@ -109,77 +106,99 @@ void KaDisp_test_02(void)
         // the word "frames" stays untouched,
         // just a 8x40px rectangle is being updated
         times++;
-    } while (times < 0xF000);
+    } while (times < 2000);
 }
 
 void KaDisp_test_03(void)
 {
-    Int16 times = 0;
+    /* This test shows an example of a simple drawing.
+     * It draws a binary counter with maximum available speed.
+     * You draw directly to the g_kadisp_page_cache buffer.
+     * Then it's content is being sent to the display.
+     * */
+    Int16 count = 0;
     const Int16 max_count = 1024;
+    const Uint8 columns_at_once = 6;
     Uint16 idx;
 
     KaDisp_init();
 
-    g_page_cache[0][0] = SSD1780_SEND_DATA;
-
-    for (idx = 1; idx < fastLog2(max_count); idx += 2)
-    {
-        g_page_cache[0][idx] = 0x02;
-        g_page_cache[0][idx + 1] = 0x02;
-
-    }
-    KaDisp_send_page_cache(0);
+    /* the first value in the cache should be allways SSD1780_SEND_DATA_TOKEN*/
 
     KaDisp_printf(1, "binary counter");
-
     KaDisp_send_page_cache(1);
 
-    while (times < max_count) // run as fast as you can
+    while (count < max_count)
     {
-        Int16 tmp = times;
-        for (idx = 1; idx < KADISP_CACHE_LINE_LGH; idx += 6)
+        Int16 tmp = count;
+        Uint8 counter_width_px;
+        for (idx = 1; idx < KADISP_CACHE_LINE_LGH; idx += columns_at_once)
         {
-            if (tmp & 0x1)
-            {
-                g_page_cache[0][idx] = 0x00;
-                g_page_cache[0][idx + 1] = 0x7C + 1;
-                g_page_cache[0][idx + 2] = 0x7C;
-                g_page_cache[0][idx + 3] = 0x7C;
-                g_page_cache[0][idx + 4] = 0x70;
-                g_page_cache[0][idx + 5] = 0x00;
+            if (tmp & 0x1) // LSB bit is set
+            {   //fill 6 columns
+                g_kadisp_page_cache[0][idx] = 0x00;
+                g_kadisp_page_cache[0][idx + 1] = 0x7C;
+                g_kadisp_page_cache[0][idx + 2] = 0x7C;
+                g_kadisp_page_cache[0][idx + 3] = 0x7C;
+                g_kadisp_page_cache[0][idx + 4] = 0x7C;
+                g_kadisp_page_cache[0][idx + 5] = 0x00;
             }
-            else
-            {
-                g_page_cache[0][idx] = 0x00;
-                g_page_cache[0][idx + 1] = 0x08;
-                g_page_cache[0][idx + 2] = 0x08;
-                g_page_cache[0][idx + 3] = 0x08;
-                g_page_cache[0][idx + 4] = 0x08;
-                g_page_cache[0][idx + 5] = 0x00;
+            else //bit is clear
+            {   //fill 6 columns
+                g_kadisp_page_cache[0][idx] = 0x00;
+                g_kadisp_page_cache[0][idx + 1] = 0x80;
+                g_kadisp_page_cache[0][idx + 2] = 0x80;
+                g_kadisp_page_cache[0][idx + 3] = 0x80;
+                g_kadisp_page_cache[0][idx + 4] = 0x80;
+                g_kadisp_page_cache[0][idx + 5] = 0x00;
             }
-            tmp >>= 1;
+            tmp >>= 1; //take the next bit
         }
 
-        times++;
-        KaDisp_send_page_cache_range(0, 0, 6 * fastLog2(times));
+        count++;
+        counter_width_px = columns_at_once * fastLog2(count - 1);
+        KaDisp_send_page_cache_range(0, 0, counter_width_px);
+
+        /* Only necessary area is updated, basing on the count value.
+         * As the count value grows the update rate slows down.
+         * That's because with higher count values, the larger
+         * amount of data needs to be send. */
     }
 }
 
-void KaDisp_DrawHorizontalBar(Uint8 page, Uint8 bar_w)
+void KaDisp_DrawHorizontalBar(Uint8 page, Uint8 fill_percent)
 {
+    /* The function draws a horizontal bar. */
     Uint16 idx;
+    Uint16 frame_width_px = 96;
+    Uint16 frame_margin_width_px = 2;
+    Uint16 bar_width_px;
+
+    //avoid overflow
     page = page % KADISP_MAX_NUMBER_OF_PAGES;
 
-    for (idx = 1; idx < bar_w + 1; idx += 2)
+    bar_width_px = (frame_width_px - 2 * frame_margin_width_px) * fill_percent;
+    bar_width_px /= 100;
+
+    // begin the frame
+    g_kadisp_page_cache[page][1] = 0x1C;
+    g_kadisp_page_cache[page][2] = 0x22;
+
+    for (idx = 1 + frame_margin_width_px; idx < bar_width_px + 1; idx++)
     {
-        g_page_cache[page][idx] = 0x7C;
-        g_page_cache[page][idx + 1] = 0x7C + 1;
+        //it's a frame plus fill
+        g_kadisp_page_cache[page][idx] = 0x41 | 0x1C; // bitwise "or" (sum)
     }
-    for (idx = bar_w + 1; idx < KADISP_CACHE_LINE_LGH; idx += 2)
+    for (idx = 1 + bar_width_px; idx < frame_width_px - frame_margin_width_px + 1; idx++)
     {
-        g_page_cache[page][idx] = 0x00;
-        g_page_cache[page][idx + 1] = 0x00;
+        //it's a frame only
+        g_kadisp_page_cache[page][idx] = 0x41;
     }
+
+    // finish the frame
+    g_kadisp_page_cache[page][frame_width_px - 1] = 0x22;
+    g_kadisp_page_cache[page][frame_width_px] = 0x1C;
+
 }
 
 void KaDisp_test_04(void)
@@ -188,158 +207,202 @@ void KaDisp_test_04(void)
 
     KaDisp_init();
 
-    KaDisp_printf(1, "bar");
-    KaDisp_send_page_cache(1);
-
-    g_page_cache[0][0] = SSD1780_SEND_DATA;
-
-    while (width < 128)
+    while (width <= 100)
     {
         KaDisp_DrawHorizontalBar(0, width);
         KaDisp_send_page_cache(0);
 
-        KaDisp_printf(1, "bar width: %d", width);
+        KaDisp_printf(1, "bar width: %d%%", width);
         KaDisp_send_page_cache(1);
 
         USBSTK5515_waitusec(10000);
         width++;
 
     }
+    USBSTK5515_waitusec(90000);
 }
+
 void KaDisp_test_05(void)
 {
-    Int16 times = 0;
+    /* This test should show a semi-gray-scale effect.
+     *
+     * The idea is to send to the display cache four different images
+     * and then just move display around them very fast in order to obtain a
+     * gray-scale effect.
+     *
+     * Each image has two pages in height (two text lines) and contains a line in the
+     * first page and a frame period information (text) in the second text line (page).
+     *
+     * The thickness of the line is different in each of the four images.
+     * When you change the images very quickly you should notice that it looks
+     * like a rectangle with gradient fill.
+     * */
 
-    KaDisp_init();
-
-    KaDisp_printf(1, "grayscale ?");
-    KaDisp_send_page_cache(1);
-
-    g_page_cache[0][0] = SSD1780_SEND_DATA;
-
-    while (times < 0x12)
-    {
-        Uint8 i;
-
-        for (i = 0; i < times % 64; i++)
-        {
-            g_page_cache[0][i + 1] = 0xFF;
-        }
-        for (i = times % 64; i < KADISP_CACHE_LINE_LGH; i++)
-        {
-            g_page_cache[0][i + 1] = 0x00;
-        }
-        KaDisp_send_page_cache(0);
-
-        //USBSTK5515_waitusec(10000);
-        times++;
-
-    }
-}
-
-void KaDisp_test_06(void)
-{
-
-    Uint16 idx;
     Uint16 page;
+    Uint16 decade;
     Uint8 depth = 8;
 
     KaDisp_init();
 
-    SSD1780_send_cmd_val(SSD1780_SET_MULTIPLEX_RATIO, 0x32);   // 0xA8, default: 0x3F, gives 8 pages
+    SSD1780_send_cmd_with_val(SSD1780_SET_MULTIPLEX_RATIO, 0x32); // 0xA8, default: 0x3F, gives 8 pages
 
     for (page = 0; page < depth; page++)
     {
+        // print semi-grayscale pattern into even pages (lines)
+        Uint16 col;
+        Uint8 pageMark = (1 << ((8 * page) / depth + 2)) - 1;
 
-        g_page_cache[page][0] = SSD1780_SEND_DATA;
-        for (idx = 1; idx < KADISP_CACHE_LINE_LGH; idx += 4)
+        // in effect:
+        // in the page 0 - there is a single line
+        // in the page 2 - there is a double line
+        // in the page 4 - there is a triple line
+        // in the page 6 - there is a quadruple line
+
+        g_kadisp_page_cache[page][0] = SSD1780_SEND_DATA_TOKEN;
+
+        for (col = 1; col < KADISP_CACHE_LINE_LGH; col += 4)
         {
-            Uint8 pageMark = (1 << ((8 * page) / depth + 2)) - 1;
-
-            if ((idx % 64) > 55)
-                pageMark &= 0xAA;
-
-            g_page_cache[page][idx] = pageMark;
-            g_page_cache[page][idx + 1] = pageMark;
-            g_page_cache[page][idx + 2] = pageMark;
-            g_page_cache[page][idx + 3] = pageMark;
+            g_kadisp_page_cache[page][col] = pageMark;
+            g_kadisp_page_cache[page][col + 1] = pageMark;
+            g_kadisp_page_cache[page][col + 2] = pageMark;
+            g_kadisp_page_cache[page][col + 3] = pageMark;
         }
         KaDisp_send_page_cache(page);
     }
 
-    {
-        Int16 times;
-        Uint16 decade;
-        Uint32 period;
-        for (decade = 6; decade < 18; decade++)
-        {
-            period = 1 << decade;
-            KaDisp_printf(1, "%d us", (Int32)period);
-            KaDisp_printf(3, "%d us", (Int32)period);
-            KaDisp_printf(5, "%d us", (Int32)period);
-            KaDisp_send_page_cache(1);
-            KaDisp_send_page_cache(3);
-            KaDisp_send_page_cache(5);
+    // now perform test - how the refresh rate affects flickering
+    // yes - it should sweep refresh rate lineary, but I did it
+    // with geometric progress of the period and haven't found time to change it
+    // to linear progress. However I believe you catch the idea.
 
-            times = 512;
-            while (times-- > 0)
-            {
-                KaDisp_scroll_window_to_page((Uint8) ((2*times) % depth));
-                USBSTK5515_waitusec((Int32)(period));
-            }
+    for (decade = 6; decade < 15; decade++)
+    {
+        Uint32 times;
+        Int32 period;
+
+        period = 1 << decade;
+        // print period info in odd pages (text-lines)
+        KaDisp_printf(1, "%d us", period);
+        KaDisp_printf(3, "%d us", period);
+        KaDisp_printf(5, "%d us", period);
+        KaDisp_printf(7, "%d us", period);
+        KaDisp_send_page_cache(1);
+        KaDisp_send_page_cache(3);
+        KaDisp_send_page_cache(5);
+        KaDisp_send_page_cache(7);
+
+        times = 0x1000 / decade;
+        //as the period grows, there is less number of refreshes
+        while (times-- > 0)
+        {
+            // now it's not drawing anything
+            // it just changing the display window position.
+            // it moves to consecutive page pairs: (0&1), (2&3), (4%5), (6%7)
+
+            Uint8 page_to_be_shown = (Uint8) ((2 * times) % depth);
+            KaDisp_move_window_to_page(page_to_be_shown);
+            USBSTK5515_waitusec(period);
+        }
+    }
+
+}
+
+void KaDisp_test_06(void)
+{
+    /* This is rather an experiment than a test. It shows how gray scale
+     * images can be drawn. Similar as in KaDisp_test_05() it draws four
+     * different images and switches the view between them around.
+     * Image update rate affects flicker of the display. Observing the display
+     * you can check at what update rate the display flickering is minimal. */
+    Uint16 page;
+    Uint32 refresh_period_us;
+
+    KaDisp_init();
+
+    for (page = 0; page < KADISP_MAX_NUMBER_OF_PAGES; page += 2)
+    {
+        Uint16 col;
+        Uint8 pattern = (1 << (page + 2)) - 1;
+        // fill even pages with gray scale pattern
+        for (col = 1; col < KADISP_CACHE_LINE_LGH; col += 6)
+        {
+            g_kadisp_page_cache[page][col] = 0x0;
+            g_kadisp_page_cache[page][col + 1] = pattern;
+            g_kadisp_page_cache[page][col + 2] = pattern;
+            g_kadisp_page_cache[page][col + 3] = pattern;
+            g_kadisp_page_cache[page][col + 3] = pattern;
+            g_kadisp_page_cache[page][col + 4] = pattern;
+            g_kadisp_page_cache[page][col + 5] = 0xFF;
+        }
+
+    }
+
+    KaDisp_send_cache_all_pages();
+
+    for (refresh_period_us = 800; refresh_period_us <= 3000; refresh_period_us += 60)
+    {
+        Uint16 refresh_count;
+
+        //fill odd pages with refresh time info text
+        for (page = 1; page < KADISP_MAX_NUMBER_OF_PAGES; page += 2)
+        {
+            KaDisp_printf(page, "rate: %d us", (Int16)refresh_period_us);
+            KaDisp_send_page_cache(page);
+        }
+
+        refresh_count = 1200 / fastLog2(refresh_period_us);
+        while (--refresh_count > 0)
+        {
+            // now it's not drawing anything
+            // it just changing the display window position.
+            // it moves to consecutive page pairs: (0&1), (2&3), (4%5), (6%7)
+            Uint8 page_to_be_shown = (refresh_count * 2) % SSD1780_PAGE_COUNT;
+            KaDisp_move_window_to_page(page_to_be_shown);
+            USBSTK5515_waitusec(refresh_period_us);
         }
     }
 }
 
 void KaDisp_test_07(void)
 {
+    /* This test shows scrolling setup options. */
 
-    Uint16 idx;
-    Uint16 page;
     Int16 times = 1024;
-
     KaDisp_init();
 
-    while (times-- > 0)
+//    SSD1780_setup_default_scrolling();
+//    SSD1780_setup_vert_and_hor_first_line_scrolling();
+//    SSD1780_setup_simple_horizontal_scrolling();
+    KaDisp_scroll_vertical();
+
+    KaDisp_printf(0, "This is");
+    KaDisp_printf(1, "kamichal's");
+    KaDisp_printf(2, "implementation");
+    KaDisp_printf(3, "of the OSD%d", 9616);
+    KaDisp_printf(4, "display");
+    KaDisp_printf(5, "driver SSD1780");
+    KaDisp_printf(6, "On C5515");
+    KaDisp_printf(7, "eZ DSP USB STICK.");
+    KaDisp_send_cache_all_pages();
+
+    while(--times > 0)
     {
-
-        Uint16 usedpage = 0;
-        for (page = 0; page < KADISP_MAX_NUMBER_OF_PAGES; page++)
-        {
-            g_page_cache[usedpage][0] = SSD1780_SEND_DATA;
-
-            for (idx = 1; idx < KADISP_CACHE_LINE_LGH; idx += 6)
-            {
-                Uint8 pageMark = (1 << (page + 1)) - 1;
-                g_page_cache[usedpage][idx] = 0x0;
-                g_page_cache[usedpage][idx + 1] = pageMark;
-                g_page_cache[usedpage][idx + 2] = pageMark;
-                g_page_cache[usedpage][idx + 3] = pageMark;
-                g_page_cache[usedpage][idx + 3] = pageMark;
-                g_page_cache[usedpage][idx + 4] = pageMark;
-                g_page_cache[usedpage][idx + 5] = 0xFF;
-
-            }
-            KaDisp_send_page_cache(usedpage);
-        }
+        // do anything
+        USBSTK5515_waitusec(10000);
     }
 }
+
+
 
 void KaDisp_test_pattern(Uint8 page_n)
 {
     Uint16 idx = 0;
     Uint16 p = page_n % KADISP_MAX_NUMBER_OF_PAGES;
-    g_page_cache[p][idx] = SSD1780_SEND_DATA;
+    g_kadisp_page_cache[p][idx] = SSD1780_SEND_DATA_TOKEN;
     for (idx = 1; idx < KADISP_CACHE_LINE_LGH; idx++)
     {
-        g_page_cache[p][idx] = (idx - 1) & 0xFF;
+        g_kadisp_page_cache[p][idx] = (idx - 1) & 0xFF;
     }
-#if KADISP_AUTO_SEND
     KaDisp_send_page_cache(p);
-#endif
-#if KADISP_AUTO_SCROLL_TO_LAST_PAGE
-    KaDisp_scroll_to_page(p);
-#endif
-
 }
 

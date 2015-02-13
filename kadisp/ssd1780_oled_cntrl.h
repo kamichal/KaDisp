@@ -14,8 +14,8 @@
 #define OSD9616_I2C_ADDR 0x3C
 #define SSD1780_DUMMY_ZERO 0x00
 #define SSD1780_DUMMY_FF 0xFF
-#define SSD1780_SEND_COMMAND 0x00
-#define SSD1780_SEND_DATA 0x40
+#define SSD1780_SEND_COMMAND_TOKEN 0x00
+#define SSD1780_SEND_DATA_TOKEN  0x40
 
 #define SSD1780_SET_MEM_ADDRESSING_MODE 0x20
 #define SSD1780_SET_VHAM_COLUMN_ADDRESS 0x21
@@ -70,13 +70,13 @@ typedef enum SSD1780_scroll_interval_e
 
 typedef enum SSD1780_H_scroll_direction_e
 {
-    scroll_riht = 0x26,
+    scroll_right = 0x26,
     scroll_left = 0x27
 } SSD1780_H_scroll_direction_e;
 
 typedef enum SSD1780_VH_scroll_direction_e
 {
-    scroll_vert_riht = 0x29,
+    scroll_vert_right = 0x29,
     scroll_vert_left = 0x2A
 } SSD1780_VH_scroll_direction_e;
 
@@ -88,10 +88,10 @@ typedef enum SSD1780_mem_mode_e
     mem_mode_defaul = mem_mode_page_addressing
 } SSD1780_mem_mode_e;
 
-void SSD1780_init(void);
+void SSD1780_init_HW(void);
 Int16 SSD1780_send_cmd(Uint16 command);
-Int16 SSD1780_send_cmd_val(Uint8 command, Uint8 val);
-Int16 SSD1780_send_data(Uint8 data);
+Int16 SSD1780_send_cmd_with_val(Uint8 command, Uint8 val);
+Int16 SSD1780_send_single_data(Uint8 data);
 void SSD1780_set_contrast(Uint8 contrast_value);
 
 Int16 SSD1780_set_memory_addressing(SSD1780_mem_mode_e mode);
@@ -104,19 +104,18 @@ Int16 SSD1780_set_PAM_page_addres(Uint8 addres_3b);
 Int16 SSD1780_set_display_start_line(Uint8 line_6b);
 Int16 SSD1780_clear_display_ram(void);
 
-void SSD1780_setup_default_scrolling(void);
 
 void SSD1780_set_vertical_offset(Uint8 v_pos_6bit);
 
 void SSD1780_set_vertical_scroll_area(Uint8 fixed_height, Uint8 floating_height);
 
-void SSD1780_setup_horizontal_scroll(
+void SSD1780_set_horizontal_scroll(
                                      Uint8 start_page,
                                      Uint8 end_page,
                                      SSD1780_scroll_interval_e interval,
                                      SSD1780_H_scroll_direction_e dir);
 
-void SSD1780_setup_vertical_and_horizontal_scroll(
+void SSD1780_set_vertical_and_horizontal_scroll(
                                                   Uint8 start_page,
                                                   Uint8 end_page,
                                                   SSD1780_scroll_interval_e interval,
